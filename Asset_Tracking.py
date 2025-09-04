@@ -4,8 +4,8 @@ import pandas as pd
 from streamlit_autorefresh import st_autorefresh
 
 # Refresh every 30 seconds (30000 ms)
-if st.checkbox("Auto-refresh every 30 seconds", value=True):
-    st_autorefresh = st.checkbox("Auto-refresh every 30 seconds", value=True, key="auto_refresh_checkbox")
+st_autorefresh = st.checkbox("Auto-refresh every 30 seconds", value=True, key="auto_refresh_checkbox")
+
 
 # --- In-memory storage of last seen info ---
 # Structure: { tail_number: {"hangar": str, "time": datetime} }
@@ -41,5 +41,6 @@ if st.session_state.last_seen:
     st.dataframe(df, use_container_width=True)
 else:
     st.info("No aircraft pings received yet.")
+
 
 
