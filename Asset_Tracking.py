@@ -14,7 +14,7 @@ if "last_seen" not in st.session_state:
 
 st.title("Aircraft Hangar Dashboard")
 st.markdown("""
-Displays the last ping location for each aircraft.
+Displays the last ping location for each aircraft.  
 Rows highlighted in green show pings received in the last 5 minutes (“NOW”).
 """)
 
@@ -55,17 +55,21 @@ df = pd.DataFrame(rows)
 df.sort_values("Highlight", ascending=False, inplace=True)
 
 # -------------------------------
-# Highlighting function
+# Highlighting function for older pandas
 # -------------------------------
 def highlight_now(row):
-    return ['background-color: #90ee90' if row["Highlight"] else '' for _ in row]
+    # row.name is the original index; check Highlight from original df
+    return ['background-color: #90ee90' if df.loc[row.name, "Highlight"] else '' for _ in row]
 
 # -------------------------------
 # Display table
 # -------------------------------
+# Drop 'Highlight' for display, keep original df for styling
+df_display = df.drop(columns=["Highlight"])
+
 st.subheader("Fleet Status")
 st.dataframe(
-    df.style.apply(highlight_now, axis=1).hide_columns(["Highlight"]),
+    df_display.style.apply(highlight_now, axis=1),
     use_container_width=True
 )
 
