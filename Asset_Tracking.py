@@ -1,6 +1,11 @@
 import streamlit as st
 from datetime import datetime
 import pandas as pd
+from streamlit_autorefresh import st_autorefresh
+
+# Refresh every 30 seconds (30000 ms)
+if st.checkbox("Auto-refresh every 30 seconds", value=True):
+    st_autorefresh(interval=30_000, key="auto_refresh")
 
 # --- In-memory storage of last seen info ---
 # Structure: { tail_number: {"hangar": str, "time": datetime} }
@@ -41,3 +46,4 @@ else:
 st_autorefresh = st.checkbox("Auto-refresh every 30 seconds", value=True)
 if st_autorefresh:
     st.experimental_rerun()
+
