@@ -42,9 +42,4 @@ if st.session_state.last_seen:
 else:
     st.info("No aircraft pings received yet.")
 
-# --- Optional: Auto-refresh every 30 seconds ---
-st_autorefresh = st.checkbox("Auto-refresh every 30 seconds", value=True)
-if st_autorefresh:
-    st.experimental_rerun()
-
 
