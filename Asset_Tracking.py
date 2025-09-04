@@ -46,7 +46,12 @@ df.sort_values("Highlight", ascending=False, inplace=True)
 
 # --- Display with simple highlighting ---
 def highlight_now(row):
-    return ['background-color: #90ee90' if row.Highlight else '' for _ in row]
+    return ['background-color: #90ee90' if row["Highlight"] else '' for _ in row]
 
 st.subheader("Fleet Status")
 st.dataframe(df.drop(columns="Highlight").style.apply(highlight_now, axis=1), use_container_width=True)
+
+
+st.subheader("Fleet Status")
+st.dataframe(df.drop(columns="Highlight").style.apply(highlight_now, axis=1), use_container_width=True)
+
