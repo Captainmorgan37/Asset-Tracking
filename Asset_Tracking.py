@@ -2,7 +2,9 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
 
-# --- In-memory storage ---
+# -------------------------------
+# In-memory storage for last seen
+# -------------------------------
 if "last_seen" not in st.session_state:
     st.session_state.last_seen = {
         "C-GABC": {"hangar": "Palmer Hanger 2", "time": datetime.utcnow() - timedelta(minutes=1)},
@@ -11,8 +13,14 @@ if "last_seen" not in st.session_state:
     }
 
 st.title("Aircraft Hangar Dashboard")
+st.markdown("""
+Displays the last ping location for each aircraft.
+Rows highlighted in green show pings received in the last 5 minutes (“NOW”).
+""")
 
-# --- Optional: Simulate webhook ping ---
+# -------------------------------
+# Optional: Simulate webhook ping
+# -------------------------------
 st.subheader("Simulate Webhook Ping")
 sim_tail = st.text_input("Tail Number", "C-GABC")
 sim_hangar = st.selectbox("Hangar", ["Palmer Hanger 2", "McCall Hanger (663847)"])
@@ -21,7 +29,9 @@ if st.button("Send Simulated Ping"):
     st.session_state.last_seen[sim_tail] = {"hangar": sim_hangar, "time": now}
     st.success(f"Updated {sim_tail} to {sim_hangar} at {now.strftime('%H:%M:%S UTC')}")
 
-# --- Prepare DataFrame ---
+# -------------------------------
+# Prepare DataFrame
+# -------------------------------
 rows = []
 now_cutoff = datetime.utcnow() - timedelta(minutes=5)
 
@@ -41,17 +51,27 @@ for tail, info in st.session_state.last_seen.items():
 
 df = pd.DataFrame(rows)
 
-# --- Sort so 'NOW' is at the top ---
+# Sort so 'NOW' rows are at the top
 df.sort_values("Highlight", ascending=False, inplace=True)
 
-# --- Display with simple highlighting ---
+# -------------------------------
+# Highlighting function
+# -------------------------------
 def highlight_now(row):
     return ['background-color: #90ee90' if row["Highlight"] else '' for _ in row]
 
+# -------------------------------
+# Display table
+# -------------------------------
 st.subheader("Fleet Status")
-st.dataframe(df.drop(columns="Highlight").style.apply(highlight_now, axis=1), use_container_width=True)
+st.dataframe(
+    df.style.apply(highlight_now, axis=1).hide_columns(["Highlight"]),
+    use_container_width=True
+)
 
-
-st.subheader("Fleet Status")
-st.dataframe(df.drop(columns="Highlight").style.apply(highlight_now, axis=1), use_container_width=True)
-
+# -------------------------------
+# Auto-refresh checkbox
+# -------------------------------
+auto_refresh = st.checkbox("Auto-refresh every 30 seconds", value=True, key="auto_refresh_checkbox")
+if auto_refresh:
+    st.experimental_rerun()
