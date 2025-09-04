@@ -1,46 +1,52 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
-from streamlit_autorefresh import st_autorefresh
 
-# Refresh every 30 seconds (30000 ms)
-st_autorefresh = st.checkbox("Auto-refresh every 30 seconds", value=True, key="auto_refresh_checkbox")
-
-
-# --- In-memory storage of last seen info ---
-# Structure: { tail_number: {"hangar": str, "time": datetime} }
+# --- In-memory storage ---
 if "last_seen" not in st.session_state:
-    st.session_state.last_seen = {}
+    st.session_state.last_seen = {
+        "C-GABC": {"hangar": "Palmer Hanger 2", "time": datetime.utcnow() - timedelta(minutes=1)},
+        "C-GXYZ": {"hangar": "McCall Hanger (663847)", "time": datetime.utcnow() - timedelta(minutes=10)},
+        "C-GNOV": {"hangar": "Palmer Hanger 2", "time": datetime.utcnow() - timedelta(minutes=3)}
+    }
 
 st.title("Aircraft Hangar Dashboard")
-st.markdown("""
-Displays the last ping location for each aircraft.
-Clean interface showing only tail number, hangar, and last seen time.
-""")
 
-# --- Simulate receiving a webhook ---
+# --- Optional: Simulate webhook ping ---
 st.subheader("Simulate Webhook Ping")
 sim_tail = st.text_input("Tail Number", "C-GABC")
 sim_hangar = st.selectbox("Hangar", ["Palmer Hanger 2", "McCall Hanger (663847)"])
 if st.button("Send Simulated Ping"):
     now = datetime.utcnow()
     st.session_state.last_seen[sim_tail] = {"hangar": sim_hangar, "time": now}
-    st.success(f"Updated {sim_tail} to {sim_hangar} at {now.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    st.success(f"Updated {sim_tail} to {sim_hangar} at {now.strftime('%H:%M:%S UTC')}")
 
-# --- Convert last_seen to DataFrame for display ---
-if st.session_state.last_seen:
-    df = pd.DataFrame([
-        {"Tail Number": tail,
-         "Hangar": info["hangar"],
-         "Last Seen": info["time"].strftime('%Y-%m-%d %H:%M:%S UTC')}
-        for tail, info in st.session_state.last_seen.items()
-    ])
-    df = df.sort_values("Tail Number")  # optional sorting
+# --- Prepare DataFrame ---
+rows = []
+now_cutoff = datetime.utcnow() - timedelta(minutes=5)
 
-    st.subheader("Fleet Status")
-    st.dataframe(df, use_container_width=True)
-else:
-    st.info("No aircraft pings received yet.")
+for tail, info in st.session_state.last_seen.items():
+    if info["time"] >= now_cutoff:
+        last_seen_str = "NOW"
+        highlight = True
+    else:
+        last_seen_str = info["time"].strftime('%H:%M:%S UTC')
+        highlight = False
+    rows.append({
+        "Tail Number": tail,
+        "Hangar": info["hangar"],
+        "Last Seen": last_seen_str,
+        "Highlight": highlight
+    })
 
+df = pd.DataFrame(rows)
 
+# --- Sort so 'NOW' is at the top ---
+df.sort_values("Highlight", ascending=False, inplace=True)
 
+# --- Display with simple highlighting ---
+def highlight_now(row):
+    return ['background-color: #90ee90' if row.Highlight else '' for _ in row]
+
+st.subheader("Fleet Status")
+st.dataframe(df.drop(columns="Highlight").style.apply(highlight_now, axis=1), use_container_width=True)
