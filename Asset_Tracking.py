@@ -12,6 +12,10 @@ if "last_seen" not in st.session_state:
         "C-GNOV": {"hangar": "Palmer Hanger 2", "time": datetime.utcnow() - timedelta(minutes=3)}
     }
 
+# Track last action to avoid rerun recursion
+if "last_action" not in st.session_state:
+    st.session_state.last_action = None
+
 st.title("Aircraft Hangar Dashboard")
 st.markdown("""
 Displays the last ping location for each aircraft.  
@@ -28,6 +32,7 @@ if st.button("Send Simulated Ping"):
     now = datetime.utcnow()
     st.session_state.last_seen[sim_tail] = {"hangar": sim_hangar, "time": now}
     st.success(f"Updated {sim_tail} to {sim_hangar} at {now.strftime('%H:%M:%S UTC')}")
+    st.session_state.last_action = "button_click"
 
 # -------------------------------
 # Prepare DataFrame
@@ -55,18 +60,15 @@ df = pd.DataFrame(rows)
 df.sort_values("Highlight", ascending=False, inplace=True)
 
 # -------------------------------
-# Highlighting function for older pandas
+# Highlighting function
 # -------------------------------
 def highlight_now(row):
-    # row.name is the original index; check Highlight from original df
     return ['background-color: #90ee90' if df.loc[row.name, "Highlight"] else '' for _ in row]
 
 # -------------------------------
 # Display table
 # -------------------------------
-# Drop 'Highlight' for display, keep original df for styling
 df_display = df.drop(columns=["Highlight"])
-
 st.subheader("Fleet Status")
 st.dataframe(
     df_display.style.apply(highlight_now, axis=1),
@@ -77,5 +79,10 @@ st.dataframe(
 # Auto-refresh checkbox
 # -------------------------------
 auto_refresh = st.checkbox("Auto-refresh every 30 seconds", value=True, key="auto_refresh_checkbox")
-if auto_refresh:
+
+# Only trigger rerun if auto-refresh is enabled and last action was NOT a button click
+if auto_refresh and st.session_state.last_action != "button_click":
     st.experimental_rerun()
+else:
+    # Reset last_action so next rerun works
+    st.session_state.last_action = None
